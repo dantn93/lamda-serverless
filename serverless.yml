@@ -1,0 +1,88 @@
+org: dantran
+app: aws-node
+service: aws-node-project
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: ap-southeast-1
+  environment:
+    BOOK_TABLE: books
+    AUTHOR_TABLE: authors
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      # Resource: "arn:aws:dynamodb:${self:provider.region}:*table/${self:provider.environment.BOOK_TABLE}"
+      Resource: arn:aws:dynamodb:ap-southeast-1:942517579722:table/books
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      # Resource: "arn:aws:dynamodb:${self:provider.region}:*table/${self:provider.environment.AUTHOR_TABLE}"
+      Resource: arn:aws:dynamodb:ap-southeast-1:942517579722:table/authors
+
+functions:
+  app-api:
+    handler: handler.apiServer
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: any
+          cors: true
+
+  graphql:
+    handler: handler.graphqlServer
+    events:
+      - http:
+          path: /graphql
+          method: get
+          cors: true
+      - http:
+          path: /graphql
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    authors:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: authors
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    books:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: books
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+plugins:
+  - serverless-offline
